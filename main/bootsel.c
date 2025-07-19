@@ -1,3 +1,10 @@
+/*! @file
+  @brief Bootselボタンの状態の取得。
+
+  mrbwriteとの連携ではCR+LFが送信されるまで待つ必要があります。
+  Bootselボタンが押下されるまで待機モードとするため状態を取得する関数を定義します。
+*/
+
 // ====================================================================
 // BEGIN: Raspberry Pi Pico SDK Examples
 //
@@ -93,7 +100,7 @@ bool __no_inline_not_in_flash_func(get_bootsel_button)() {
 // ====================================================================
 // BEGIN: Our original code
 // ====================================================================
-#include "mrbc_pico_bootsel.h"
+#include "bootsel.h"
 
 int bootsel_get() {
   return get_bootsel_button() ? 1 : 0;

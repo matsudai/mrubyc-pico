@@ -17,6 +17,9 @@ int mrbwrite_cmd_mode();
 #include "mrubyc.h"
 #include "mrbc_pico_bootsel.h"
 #include "mrbc_pico_gpio.h"
+#include "mrbc_pico_pwm.h"
+#include "mrbc_pico_adc.h"
+#include "mrbc_pico_i2c.h"
 
 //*********************************************
 // ENABLE LIBRARY written by C (Utilities)
@@ -93,6 +96,9 @@ int main() {
 
   mrbc_pico_bootsel_gem_init(0);
   mrbc_pico_gpio_gem_init(0);
+  mrbc_pico_pwm_gem_init(0);
+  mrbc_pico_adc_gem_init(0);
+  mrbc_pico_i2c_gem_init(0);
 
   // Ruby 側のクラス・メソッド定義
   extern const uint8_t myclass_bytecode[];
