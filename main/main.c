@@ -28,6 +28,11 @@ int mrbwrite_cmd_mode();
 #include "mrbc_pico_adc.h"
 #include "mrbc_pico_i2c.h"
 
+#if PICO_CYW43_SUPPORTED
+#include "mrbc_pico_cyw43_arch.h"
+#include "mrbc_pico_lwip.h"
+#endif
+
 //*********************************************
 // ENABLE LIBRARY written by C (Utilities)
 //*********************************************
@@ -105,6 +110,11 @@ int main() {
   mrbc_pico_pwm_gem_init(0);
   mrbc_pico_adc_gem_init(0);
   mrbc_pico_i2c_gem_init(0);
+
+#if PICO_CYW43_SUPPORTED
+  mrbc_pico_cyw43_arch_gem_init(0);
+  mrbc_pico_lwip_gem_init(0);
+#endif
 
   // Ruby 側のクラス・メソッド定義
   extern const uint8_t myclass_bytecode[];
@@ -193,10 +203,9 @@ int mrbwrite_cmd_mode() {
   }
   // ファイル消去コマンドの処理
   if (cmd == MRBWRITE_CLEAR) {
-    printf("+OK\r\n");
     vfs_remove("master.mrbc");
     vfs_remove("slave.mrbc");
-    printf("+DONE\r\n");
+    printf("+OK\r\n");
   }
 
   // ヘルプコマンドの処理
@@ -219,7 +228,6 @@ int mrbwrite_cmd_mode() {
   }
   // プログラム表示コマンドの処理
   if (cmd == MRBWRITE_SHOWPROG) {
-    printf("+OK\r\n");
     if (vfs_stat_size("master.mrbc", &buffer_size) >= 0 && buffer_size > 0) {
       buffer = calloc(buffer_size, sizeof(uint8_t));
       if (buffer != NULL && vfs_read("master.mrbc", buffer, buffer_size) > 0) {

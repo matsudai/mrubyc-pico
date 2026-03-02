@@ -24,8 +24,11 @@ pico_sdk_init()
 # mruby/cのコンパイルオプションの設定
 add_compile_options(-DMRBC_NO_TIMER -DMRBC_USE_HAL_RP2040 -DMRBC_REQUIRE_32BIT_ALIGNMENT -DMAX_REGS_SIZE=256 -DMAX_SYMBOLS_COUNT=500)
 
+# mainターゲットの作成
+add_executable(main)
+
 # mainの構成ファイル
-add_executable(main
+target_sources(main PUBLIC
   main/main.c
   main/mrbc_pico_gpio.c
   main/mrbc_pico_pwm.c
@@ -72,10 +75,27 @@ target_link_libraries(main
 
 # mainでincludeされるファイル
 target_include_directories(main PUBLIC
+  main
   components/mrubyc/src
   components/mrubyc/hal/rp2040
   components/littlefs
 )
+
+# WiFiサポート（Pico Wのみ）
+if (PICO_CYW43_SUPPORTED)
+  target_compile_definitions(main PUBLIC
+    PICO_CYW43_SUPPORTED=1
+  )
+
+  target_sources(main PUBLIC
+    main/mrbc_pico_cyw43_arch.c
+    main/mrbc_pico_lwip.c
+  )
+
+  target_link_libraries(main
+    pico_cyw43_arch_lwip_threadsafe_background
+  )
+endif()
 
 # mruby/c組み込みのRubyクラスのコンパイル（出力先: components/mrubyc/src/mrblib.c）
 add_dependencies(main mrubyc)

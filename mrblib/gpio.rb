@@ -3,8 +3,12 @@
 # APIガイドは下記を参照:
 # - https://github.com/mruby/microcontroller-peripheral-interface-guide
 #
+# GPIO::LEDピンを指定した場合はオンボードのLEDが指定される．
+# Pico W系ボードではオンボードLEDがGPIOでなくCYW43チップ経由で制御されるため，ピンは0として扱う．
+#
 # @example
-#   led = GPIO.new(25, GPIO::OUT)
+#   led = GPIO.new(25, GPIO::OUT)          # PicoのオンボードLED（Pico Wの場合は0）
+#   # led = GPIO.new(GPIO::LED, GPIO::OUT) # オンボードLEDの場合は定数指定も可能
 #   led.write(1)
 #   value = led.read
 class GPIO
@@ -16,6 +20,10 @@ class GPIO
   PULL_DOWN = 0x20 # 内部プルダウンを有効化
   # OPEN_DRAIN = 0 # オープンドレインモードに設定 https://github.com/raspberrypi/pico-sdk/issues/752
 
+  # オンボードLEDピン
+  # Pico: 25，Pico W: 0（CYW43経由）
+  LED = mrbc_pico_default_led_pin
+
   attr_reader :pin
 
   # 指定されたピンのGPIOインスタンスの初期化
@@ -25,8 +33,7 @@ class GPIO
   # @raise [ArgumentError] ピンまたはパラメータが無効な場合
   #
   # @example
-  #   # ピン番号25を出力に設定
-  #   pin = GPIO.new(25, GPIO::OUT)
+  #   led = GPIO.new(GPIO::LED, GPIO::OUT)
   def initialize(pin, params)
     if !pin.is_a?(Integer) && !pin.is_a?(String)
       raise ArgumentError, "Invalid pin type: #{pin.class}"
@@ -54,7 +61,11 @@ class GPIO
   #     puts "Low"
   #   end
   def read
-    mrbc_pico_gpio_get(pin)
+    if cyw43_led?
+      mrbc_pico_cyw43_gpio_get(@pin)
+    else
+      mrbc_pico_gpio_get(@pin)
+    end
   end
 
   # ピンの値がハイレベル（1）かどうかの確認
@@ -88,7 +99,11 @@ class GPIO
   # @example
   #   pin.write(1)
   def write(integer_data)
-    mrbc_pico_gpio_put(@pin, integer_data)
+    if cyw43_led?
+      mrbc_pico_cyw43_gpio_put(@pin, integer_data)
+    else
+      mrbc_pico_gpio_put(@pin, integer_data)
+    end
     nil
   end
 
@@ -102,15 +117,24 @@ class GPIO
   # @example
   #   pin.setmode(GPIO::IN | GPIO::PULL_UP)
   def setmode(params)
+    # Pico WのオンボードLEDはCYW43ドライバ経由で制御されるため，モード設定は無視
+    return nil if cyw43_led?
+
     # IN/OUTが指定された場合は初期化と方向設定を行う
     direction = params & (IN | OUT)
     if direction != 0
-      mrbc_pico_gpio_init(pin)
-      mrbc_pico_gpio_set_dir(pin, direction)
+      mrbc_pico_gpio_init(@pin)
+      mrbc_pico_gpio_set_dir(@pin, direction)
     end
 
     # PULL_UP/PULL_DOWNは常に適用
-    mrbc_pico_gpio_set_pulls(pin, params & PULL_UP, params & PULL_DOWN)
+    mrbc_pico_gpio_set_pulls(@pin, params & PULL_UP, params & PULL_DOWN)
     nil
   end
+
+  private
+
+    def cyw43_led?
+      @pin == LED && mrbc_pico_cyw43_supported?
+    end
 end

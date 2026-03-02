@@ -97,6 +97,37 @@ void mrbc_pico_gpio_set_function(mrb_vm* vm, mrb_value* v, int argc)
   gpio_set_function(pin, mode);
 }
 
+/*! @brief mrbc_pico_cyw43_supported?() CYW43チップ対応ボードかどうかの判定
+
+  @return true: CYW43対応（Pico W等），false: 非対応（Pico等）
+*/
+static void mrbc_pico_cyw43_supported_q(mrb_vm* vm, mrb_value* v, int argc)
+{
+#if PICO_CYW43_SUPPORTED
+  SET_TRUE_RETURN();
+#else
+  SET_FALSE_RETURN();
+#endif
+}
+
+/*! @brief mrbc_pico_default_led_pin() デフォルトLEDピン番号の取得
+
+  ボードに応じたオンボードLEDのピン番号を返す．
+  Pico W系: CYW43_WL_GPIO_LED_PIN (0)，Pico系: PICO_DEFAULT_LED_PIN (25)
+
+  @return LEDピン番号
+*/
+static void mrbc_pico_default_led_pin(mrb_vm* vm, mrb_value* v, int argc)
+{
+#if defined(CYW43_WL_GPIO_LED_PIN)
+  SET_INT_RETURN(CYW43_WL_GPIO_LED_PIN);
+#elif defined(PICO_DEFAULT_LED_PIN)
+  SET_INT_RETURN(PICO_DEFAULT_LED_PIN);
+#else
+  SET_INT_RETURN(-1);
+#endif
+}
+
 /** @brief C関数のRubyへの公開
 
   @param vm mruby/c VM
@@ -110,4 +141,8 @@ void mrbc_pico_gpio_gem_init(struct VM* vm)
   mrbc_define_method(0, mrbc_class_object, "mrbc_pico_gpio_put", mrbc_pico_gpio_put);
   mrbc_define_method(0, mrbc_class_object, "mrbc_pico_gpio_get", mrbc_pico_gpio_get);
   mrbc_define_method(0, mrbc_class_object, "mrbc_pico_gpio_set_function", mrbc_pico_gpio_set_function);
+
+  // ボード情報
+  mrbc_define_method(0, mrbc_class_object, "mrbc_pico_cyw43_supported?", mrbc_pico_cyw43_supported_q);
+  mrbc_define_method(0, mrbc_class_object, "mrbc_pico_default_led_pin", mrbc_pico_default_led_pin);
 }
