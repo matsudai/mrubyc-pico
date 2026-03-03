@@ -102,8 +102,11 @@ class WLAN
   # @example
   #   puts wlan.ip  #=> "192.168.1.100"
   def ip
-    lwip_transaction do
+    begin
+      mrbc_pico_lwip_begin
       raw_ip = mrbc_pico_lwip_ip
+    ensure
+      mrbc_pico_lwip_end
     end
     format_ip(raw_ip)
   end
@@ -117,11 +120,14 @@ class WLAN
   #   puts config["ip"]
   #   puts config["gw"]
   def ifconfig
-    lwip_transaction do
+    begin
+      mrbc_pico_lwip_begin
       raw_ip = mrbc_pico_lwip_ip
       raw_netmask = mrbc_pico_lwip_netmask
       raw_gw = mrbc_pico_lwip_gw
       raw_dns = mrbc_pico_lwip_dns
+    ensure
+      mrbc_pico_lwip_end
     end
     {
       "ip" => format_ip(raw_ip),
@@ -133,15 +139,7 @@ class WLAN
 
   private
 
-    # lwIPロックで保護されたブロックの実行
-    def lwip_transaction
-      mrbc_pico_lwip_begin
-      yield
-    ensure
-      mrbc_pico_lwip_end
-    end
-
-    # 6バイトのバイト列の"XX:XX:XX:XX:XX:XX"への変換
+# 6バイトのバイト列の"XX:XX:XX:XX:XX:XX"への変換
     def format_mac(raw)
       s = ""
       6.times do |i|
