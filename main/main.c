@@ -22,6 +22,7 @@ int mrbwrite_cmd_mode();
 // ENABLE LIBRARY written by C (Extensions for Ruby)
 //*********************************************
 #include "mrubyc.h"
+#include "mrbc_pico_board.h"
 #include "mrbc_pico_bootsel.h"
 #include "mrbc_pico_gpio.h"
 #include "mrbc_pico_pwm.h"
@@ -105,6 +106,7 @@ int main() {
   //***************************************
   mrbc_init(memory_pool, MEMORY_SIZE);
 
+  mrbc_pico_board_gem_init(0);
   mrbc_pico_bootsel_gem_init(0);
   mrbc_pico_gpio_gem_init(0);
   mrbc_pico_pwm_gem_init(0);

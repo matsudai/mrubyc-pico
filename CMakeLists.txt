@@ -6,13 +6,11 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-# picotoolのインストール先（ない場合はダウンロード）
+# picotoolのインストール先
 set(PICOTOOL_FETCH_FROM_GIT_PATH ${CMAKE_SOURCE_DIR}/components/picotool CACHE PATH "")
+
 # pico-sdkのビルド設定
 set(PICO_SDK_PATH ${CMAKE_SOURCE_DIR}/components/pico-sdk CACHE STRING "")
-set(PICO_PLATFORM rp2040 CACHE STRING "")
-set(PICO_BOARD pico CACHE STRING "")
-set(PICO_COMPILER pico_arm_cortex_m0plus_gcc CACHE STRING "")
 
 # Pico SDKの導入およびプロジェクト設定
 include(components/pico-sdk/pico_sdk_init.cmake)
@@ -30,6 +28,7 @@ add_executable(main)
 # mainの構成ファイル
 target_sources(main PUBLIC
   main/main.c
+  main/mrbc_pico_board.c
   main/mrbc_pico_gpio.c
   main/mrbc_pico_pwm.c
   main/mrbc_pico_adc.c

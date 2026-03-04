@@ -16,7 +16,7 @@
 #   i2c.write(0x45, 0x30, 0xa2)
 class I2C
   # GPIOの機能定数（I2C用）
-  GPIO_FUNC_I2C = 3 # C: enum gpio_function_rp2040 { GPIO_FUNC_I2C = 3 }
+  GPIO_FUNC_I2C = 3 # C: enum gpio_function_rp2040, gpio_function_rp2350 { GPIO_FUNC_I2C = 3 }
 
   attr_reader :unit, :frequency, :scl_pin, :sda_pin
 
@@ -50,13 +50,13 @@ class I2C
     @frequency = (freq || frequency).to_i.clamp(1, 1_000_000)
 
     # デフォルトピンの設定
-    # RP2040: I2C0 => GP4(SDA), GP5(SCL), I2C1 => GP6(SDA), GP7(SCL)
-    # [TODO] RP2350: I2C0 => GP8(SDA), GP9(SCL), I2C1 => GP10(SDA), GP11(SCL)
+    # Pico / Pico W / Pico 2 / Pico 2 W 共通:
+    #   I2C0 => GP4(SDA), GP5(SCL), I2C1 => GP6(SDA), GP7(SCL)
     if @unit == 0
-      @scl_pin = scl_pin || 5  # RP2040のデフォルト
+      @scl_pin = scl_pin || 5
       @sda_pin = sda_pin || 4
     else
-      @scl_pin = scl_pin || 7  # RP2040のデフォルト
+      @scl_pin = scl_pin || 7
       @sda_pin = sda_pin || 6
     end
 

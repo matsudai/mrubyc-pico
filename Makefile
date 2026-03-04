@@ -2,37 +2,42 @@
 #  MakefileによるCMakeビルド手順の簡略化
 #
 #  CMakeのビルドプロセスを簡略化するためのラッパー．
-#  プロジェクトのルートディレクトリで `make` を実行すると，ビルドディレクトリの作成，CMakeの実行，コンパイルが自動的に行われる．
+#  複数のボード（Pico、Pico2など）に対応するため `make` のみを実行すると選択メニューが表示される．
+#
+#  `make pico` など直接ボードを指定すると，そのボード用のファームウェアのみビルドされる．
+#  `make all` の場合は全てのボード用のファームウェアがビルドされる．
 # ====================================================================
 
 # Makefileで定義されるコマンド一覧（非ファイル）
-.PHONY: all clean configure mrbc help pico pico_w
+.PHONY: default all clean mrbc help pico pico_w pico2 pico2_w
 
-# make コマンドのデフォルトで実行されるターゲット指定
-.DEFAULT_GOAL := all
+# make コマンドのデフォルトターゲット
+.DEFAULT_GOAL := default
 
-# ボード未指定時はエラー
-PICO_BOARD ?= $(error Run 'make pico', 'make pico_w' or set PICO_BOARD environment variable)
+# ボード選択メニュー（選択後に `make <board>` が呼び出される）
+default:
+	@echo -n "1) pico  2) pico2  3) pico_w  4) pico2_w : "; \
+	read choice; \
+	case $$choice in \
+		1) $(MAKE) pico;; \
+		2) $(MAKE) pico2;; \
+		3) $(MAKE) pico_w;; \
+		4) $(MAKE) pico2_w;; \
+		*) echo "Invalid selection" >&2; exit 1;; \
+	esac
 
-# CMakeに渡す引数
-CMAKE_ARGS = -DPICO_BOARD=$(PICO_BOARD)
+# 全ボードビルド
+all: pico pico2 pico_w pico2_w
 
-# プロジェクトのビルド（直接呼び出された場合はPICO_BOARDかビルドキャッシュがなければエラー）
-all: build/Makefile
-	@make --no-print-directory -C build
-
-# ターゲットごとのPICO_BOARD設定
-pico: PICO_BOARD=pico
-pico_w: PICO_BOARD=pico_w
-
-# ボードに関わらずビルドの実行はallターゲット
-pico pico_w: all
+# ボードターゲット（CMake設定済みのビルドディレクトリに依存）
+pico pico2 pico_w pico2_w: %: build/%/Makefile
+	@$(MAKE) --no-print-directory -C build/$*
 
 # CMakeのビルド設定ファイル（Makefile）の生成ルール
 #
 # CMakeLists.txt更新時のみ実行される．
-build/Makefile: CMakeLists.txt
-	@cmake -S . -B build $(CMAKE_ARGS)
+build/%/Makefile: CMakeLists.txt
+	@cmake -S . -B build/$* -DPICO_BOARD=$*
 
 # ビルド成果物の削除
 clean:
@@ -47,7 +52,11 @@ help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Available targets:"
+	@echo "  (default)   Select board interactively."
+	@echo "  all         Build for all boards."
 	@echo "  pico        Build for Pico."
+	@echo "  pico2       Build for Pico 2."
 	@echo "  pico_w      Build for Pico W (WiFi support)."
+	@echo "  pico2_w     Build for Pico 2 W (WiFi support)."
 	@echo "  clean       Remove all build artifacts."
 	@echo "  help        Show this help message."

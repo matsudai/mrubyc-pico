@@ -32,12 +32,25 @@ class ADC
     @pin = pin
 
     # RP2040: GPIO26-29 -> チャンネル0-3
-    # [TODO] RP2350: GPIO40-47 -> チャンネル0-7
-    @channel = case @pin
-    when 26 then 0
-    when 27 then 1
-    when 28 then 2
-    when 29 then 3
+    # RP2350: GPIO40-47 -> チャンネル0-7
+    if mrbc_pico_rp2350?
+      @channel = case @pin
+      when 40 then 0
+      when 41 then 1
+      when 42 then 2
+      when 43 then 3
+      when 44 then 4
+      when 45 then 5
+      when 46 then 6
+      when 47 then 7
+      end
+    else
+      @channel = case @pin
+      when 26 then 0
+      when 27 then 1
+      when 28 then 2
+      when 29 then 3
+      end
     end
 
     if @channel.nil?
