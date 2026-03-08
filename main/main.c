@@ -23,6 +23,7 @@ int mrbwrite_cmd_mode();
 //*********************************************
 #include "mrubyc.h"
 #include "mrbc_pico_bootsel.h"
+#include "mrbc_pico_break.h"
 #include "mrbc_pico_gpio.h"
 #include "mrbc_pico_pwm.h"
 #include "mrbc_pico_adc.h"
@@ -105,6 +106,7 @@ int main() {
   mrbc_pico_pwm_gem_init(0);
   mrbc_pico_adc_gem_init(0);
   mrbc_pico_i2c_gem_init(0);
+  mrbc_pico_break_init(0);
 
   // Ruby 側のクラス・メソッド定義
   extern const uint8_t myclass_bytecode[];
@@ -250,36 +252,4 @@ int mrbwrite_cmd_mode() {
     printf("+DONE\r\n");
   }
   return 1;
-}
-
-// ************************************
-// Break 信号によるリブート機能
-// ************************************
-
-#include "tusb.h"
-
-static volatile bool break_received = false;
-
-/** @brief Break信号受信コールバック
-
-  TinyUSBのコールバック設定．
-  Break信号受信時にフラグを立てる．
-*/
-void tud_cdc_send_break_cb(uint8_t itf, uint16_t duration_ms) {
-    (void)itf; // avoid warning.
-    (void)duration_ms; // avoid warning.
-    break_received = true;
-}
-
-/** @brief Break信号によるソフトウェアリセット
-
-  mrbc_tickのコールバック設定．
-  Break信号が検出された場合，1度だけ100ms後に再起動を予約する．
-*/
-void mrbc_tick_callback(void) {
-    static bool reboot_initiated = false;
-    if (break_received && !reboot_initiated) {
-        reboot_initiated = true;
-        watchdog_reboot(0, 0, 100);
-    }
 }
