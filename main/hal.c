@@ -6,6 +6,7 @@
   MRBC_NO_TIMERが定義されている場合もデフォルトのそれらが定義されるようにする．
 */
 #include <stdio.h>
+#include <stdint.h>
 
 #ifdef MRBC_NO_TIMER
 
