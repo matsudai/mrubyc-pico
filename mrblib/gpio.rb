@@ -4,7 +4,8 @@
 # - https://github.com/mruby/microcontroller-peripheral-interface-guide
 #
 # @example
-#   led = GPIO.new(25, GPIO::OUT)
+#   led = GPIO.new(25, GPIO::OUT)    # ピン番号で指定
+#   led = GPIO.new("LED", GPIO::OUT) # オンボードLED（Pico/Pico2: GPIO 25，Pico W: CYW43 GPIO 0）
 #   led.write(1)
 #   value = led.read
 class GPIO
@@ -35,17 +36,22 @@ class GPIO
   #   # ピン番号25を出力に設定
   #   pin = GPIO.new(25, GPIO::OUT)
   def initialize(pin, params)
+    # 型チェック
     if !pin.is_a?(Integer) && !pin.is_a?(String)
       raise ArgumentError, "Invalid pin type: #{pin.class}"
     end
     if !params.is_a?(Integer)
       raise ArgumentError, "Invalid params type: #{params.class}"
     end
+
     # IN または OUT の指定は必須（HIGH_Zは未サポート）
     if params & (IN | OUT) == 0
       raise ArgumentError, "IN or OUT must be specified"
     end
-    @pin = pin.to_i
+
+    # "LED"の場合はオンボードLED，それ以外は数値のピン番号
+    @pin = pin == "LED" ? mrbc_pico_default_led_pin : pin.to_i
+
     setmode(params)
   end
 
@@ -61,7 +67,11 @@ class GPIO
   #     puts "Low"
   #   end
   def read
-    mrbc_pico_gpio_get(@pin)
+    if cyw43_pin?
+      mrbc_pico_cyw43_gpio_get(@pin)
+    else
+      mrbc_pico_gpio_get(@pin)
+    end
   end
 
   # ピンの値がハイレベル（1）かどうかの確認
@@ -95,7 +105,11 @@ class GPIO
   # @example
   #   pin.write(1)
   def write(integer_data)
-    mrbc_pico_gpio_put(@pin, integer_data)
+    if cyw43_pin?
+      mrbc_pico_cyw43_gpio_put(@pin, integer_data)
+    else
+      mrbc_pico_gpio_put(@pin, integer_data)
+    end
     nil
   end
 
@@ -109,6 +123,9 @@ class GPIO
   # @example
   #   pin.setmode(GPIO::IN | GPIO::PULL_UP)
   def setmode(params)
+    # CYW43経由のオンボードLEDはモード設定不要（cyw43_arch_initで初期化済み）
+    return nil if cyw43_pin?
+
     real_mode = 0
     real_mode |= 0x01 if params & OUT != 0
     real_mode |= 0x10 if params & PULL_UP != 0
@@ -124,4 +141,13 @@ class GPIO
     mrbc_pico_gpio_set_pulls(@pin, real_mode & 0x10, real_mode & 0x20)
     nil
   end
+
+  private
+
+    # 現在のピンがCYW43ドライバ経由で制御されるピンかの判定
+    #
+    # @return [Boolean] CYW43ドライバ経由の場合はtrue
+    def cyw43_pin?
+      @pin == mrbc_pico_default_led_pin && mrbc_pico_default_led_controlled_by_cyw43?
+    end
 end
