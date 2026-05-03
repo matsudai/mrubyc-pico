@@ -73,6 +73,21 @@ target_link_libraries(main
   hardware_uart
 )
 
+# CYW43サポート（Pico W / Pico 2 W）
+if (PICO_CYW43_SUPPORTED)
+  target_compile_definitions(main PUBLIC
+    PICO_CYW43_SUPPORTED=1
+  )
+
+  target_sources(main PUBLIC
+    main/mrbc_pico_cyw43_arch.c
+  )
+
+  target_link_libraries(main
+    pico_cyw43_arch_none
+  )
+endif()
+
 # mainでincludeされるファイル
 target_include_directories(main PUBLIC
   components/mrubyc/src
