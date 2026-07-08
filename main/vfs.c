@@ -2,7 +2,7 @@
   @brief Raspberry Pi Pico向け仮想ファイルシステム（VFS）の実装
 
   LittleFSライブラリを利用してフラッシュメモリ上にファイルシステムを構築し，
-  ファイルの読み書き，削除，CRC8計算などの基本的なファイル操作機能を提供する．
+  ファイルの読み書き，削除などの基本的なファイル操作機能を提供する．
 */
 #include "vfs.h"
 #include "lfs.h"
@@ -204,52 +204,4 @@ int vfs_remove(const char* filename) {
 */
 int vfs_unmount() {
   return lfs_unmount(&lfs);
-}
-
-/** @brief ファイルのCRC8チェックサム計算
-
-  指定されたファイルの内容からCRC8チェックサムを計算する．
-  生成多項式は0x31を使用し，初期値は0xFFとする．
-
-  @param filename 対象ファイル名
-  @param _crc CRC8値を格納する変数のポインタ（NULLの場合は無視される）
-  @return 成功時はCRC8値，失敗時は負の値を返す
-*/
-int vfs_crc8(const char* filename, uint8_t* _crc) {
-  // CRC8初期値と生成多項式の設定
-  uint8_t crc = 0xFF;
-  const uint8_t poly = 0x31;
-
-  // ファイルの内容を動的メモリで読み込み
-  uint8_t *buffer = NULL;
-  uint32_t buffer_size = 0;
-  if (vfs_stat_size(filename, &buffer_size) < 0 || buffer_size == 0) {
-    return -1;
-  }
-  buffer = calloc(buffer_size, sizeof(uint8_t));
-  if (buffer == NULL || vfs_read(filename, buffer, buffer_size) < 0) {
-    if (buffer != NULL) free(buffer);
-    return -1;
-  }
-
-  // CRC8をバイトごとに計算
-  for (size_t i = 0; i < buffer_size; i++) {
-    crc ^= buffer[i];
-    for (int j = 0; j < 8; j++) {
-      if (crc & 0x80) {
-        crc = (crc << 1) ^ poly;
-      } else {
-        crc <<= 1;
-      }
-    }
-  }
-
-  // 使用したメモリを解放
-  free(buffer);
-
-  // CRC8値を返却用変数に設定
-  if (_crc != NULL) {
-    *_crc = crc;
-  }
-  return (int)crc;
 }

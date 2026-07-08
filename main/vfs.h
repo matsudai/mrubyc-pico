@@ -24,7 +24,4 @@ int vfs_remove(const char* filename);
 // vfs_unmount() ファイルシステムのアンマウント
 int vfs_unmount(void);
 
-// vfs_crc8(filename, _crc) ファイルのCRC8チェックサム計算
-int vfs_crc8(const char* filename, uint8_t* _crc);
-
 #endif // VFS_H
